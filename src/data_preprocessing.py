@@ -31,9 +31,9 @@ def preprocess_data(df: pd.DataFrame):
     # Fill NaNs
     for c in df.columns:
         if df[c].dtype.kind in 'biufc':
-            df[c].fillna(df[c].median(), inplace=True)
+            df[c].fillna(df[c].median())
         else:
-            df[c].fillna(df[c].mode().iloc[0], inplace=True)
+            df[c].fillna(df[c].mode().iloc[0])
 
     # Label column
     target_col = 'Label' if 'Label' in df.columns else df.columns[-1]
@@ -50,9 +50,15 @@ def preprocess_data(df: pd.DataFrame):
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
 
+    # Replace infinite or NaN values that may have appeared after scaling
+    import numpy as np
+    X_train = np.nan_to_num(X_train, nan=0.0, posinf=0.0, neginf=0.0)
+    X_test = np.nan_to_num(X_test, nan=0.0, posinf=0.0, neginf=0.0)
+
     info("Applying SMOTE...")
-    sm = SMOTE(random_state=42, n_jobs=-1)
+    sm = SMOTE(random_state=42)
     X_train, y_train = sm.fit_resample(X_train, y_train)
     info(f"Balanced train size: {X_train.shape}")
+
 
     return X_train, X_test, y_train, y_test, scaler
